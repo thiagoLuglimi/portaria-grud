@@ -1,0 +1,47 @@
+{% extends 'base.html' %}
+
+{% block conteudo %}
+
+
+<a href="/exportar" class="btn-relatorio">
+    📊 Exportar relatório de hoje
+</a>
+
+<div class="acoes">
+    <a href="/novo" class="btn btn-primario">+ Novo Registro</a>
+    <a href="/relatorio" class="btn btn-secundario">📊 Relatório Diário</a>
+</div>
+
+<div class="tabela-wrapper">
+<table>
+    <tr>
+        <th>ID</th>
+        <th>Evento</th>
+        <th>Data/Hora</th>
+        <th>Placa</th>
+        <th>Destino</th>
+        <th>Ações</th>
+    </tr>
+
+    {% for r in dados %}
+    <tr>
+        <td>{{ r[0] }}</td>
+        <td>{{ r[2] }}</td>
+        <td>{{ r[3] }}</td>
+        <td>{{ r[8] }}</td>
+        <td>{{ r[12] }}</td>
+        <td class="acoes">
+            <a href="/editar/{{ r[0] }}" class="btn-editar">Editar</a>
+            <a href="/excluir/{{ r[0] }}" 
+               class="btn-excluir"
+               onclick="return confirm('Deseja excluir este registro?')">
+               Excluir
+            </a>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
+
+</div>
+
+{% endblock %}

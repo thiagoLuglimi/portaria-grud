@@ -1,0 +1,148 @@
+:root {
+    --azul: #0A2E73;
+    --vermelho: #E30613;
+    --cinza: #F4F6F8;
+    --texto: #444;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: Arial, sans-serif;
+}
+
+body {
+    margin: 0;
+    background: var(--cinza);
+    color: var(--texto);
+}
+
+.topo {
+    background: white;
+    padding: 10px;
+    border-bottom: 4px solid var(--vermelho);
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.logo {
+    height: 45px;
+}
+
+.container {
+    padding: 15px;
+}
+
+.card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    max-width: 500px;
+    margin: auto;
+}
+
+label {
+    font-weight: bold;
+    margin-top: 10px;
+    display: block;
+}
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    margin-top: 4px;
+    border-radius: 6px;
+    border: 1px solid #ccc;
+}
+
+.btn {
+    display: inline-block;
+    padding: 10px 16px;
+    border-radius: 6px;
+    text-decoration: none;
+    font-weight: bold;
+    text-align: center;
+}
+
+.btn-primario {
+    background: var(--azul);
+    color: white;
+    border: none;
+    margin-top: 15px;
+}
+
+.btn-secundario {
+    background: var(--vermelho);
+    color: white;
+}
+
+.tabela-wrapper {
+    overflow-x: auto;
+}
+
+table {
+    width: 100%;
+    background: white;
+    border-collapse: collapse;
+}
+
+th {
+    background: var(--azul);
+    color: white;
+    padding: 10px;
+}
+
+td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.entrada {
+    color: green;
+    font-weight: bold;
+}
+
+.saida {
+    color: var(--vermelho);
+    font-weight: bold;
+}
+
+.rodape {
+    text-align: center;
+    padding: 10px;
+    background: white;
+    margin-top: 20px;
+    font-size: 12px;
+}
+
+.acoes {
+    display: flex;
+    gap: 8px;
+}
+
+.btn-editar {
+    background: #2e7d32;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.btn-excluir {
+    background: #c62828;
+    color: white;
+    padding: 6px 10px;
+    border-radius: 6px;
+    text-decoration: none;
+}
+
+.btn-relatorio {
+    display: inline-block;
+    margin-bottom: 15px;
+    background: #1b5e20;
+    color: white;
+    padding: 10px 14px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-weight: bold;
+}

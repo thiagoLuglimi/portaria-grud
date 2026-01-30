@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Portaria Rodovitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+<header class="topo">
+    <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+    <h1>Controle de Portaria</h1>
+</header>
+
+<main class="container">
+    {% block conteudo %}{% endblock %}
+</main>
+
+<footer class="rodape">
+    Rodovitor Transportes © {{ 2026 }}
+</footer>
+
+</body>
+</html>

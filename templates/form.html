@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block conteudo %}
+
+<form method="POST" class="card">
+
+<label>Unidade</label>
+<select name="unidade" required>
+    <option value="">Selecione</option>
+    <option value="BEL">BEL</option>
+    <option value="GRU">GRU</option>
+    <option value="CWB">CWB</option>
+    <option value="BNU">BNU</option>
+    <option value="MAO">MAO</option>
+    <option value="MAB">MAB</option>
+    <option value="PAR">PAR</option>
+</select>
+
+<label>Evento</label>
+<select name="evento" required>
+    <option value="ENTRADA">ENTRADA</option>
+    <option value="SAIDA">SAÍDA</option>
+</select>
+
+<label>Motorista</label>
+<input type="text" name="motorista" required>
+
+<label>Cavalo Mecânico (Placa)</label>
+<input type="text" name="cavalo" required>
+
+<label>KM do Cavalo</label>
+<input type="text" name="km">
+
+<label>Tipo de Conjunto</label>
+<select name="tipo_conjunto" id="tipo" onchange="ajustarCampos()" required>
+    <option value="">Selecione</option>
+    <option value="BITREM">BITREM</option>
+    <option value="LS">LS</option>
+    <option value="CAMINHAO">CAMINHÃO</option>
+</select>
+
+<div id="campo-placa1">
+    <label>Placa 1</label>
+    <input type="text" name="placa1">
+</div>
+
+<div id="campo-placa2">
+    <label>Placa 2</label>
+    <input type="text" name="placa2">
+</div>
+
+<div id="campo-lacre1">
+    <label>Lacre 1</label>
+    <input type="text" name="lacre1">
+</div>
+
+<div id="campo-lacre2">
+    <label>Lacre 2</label>
+    <input type="text" name="lacre2">
+</div>
+
+<label>Destino / Operação</label>
+<input type="text" name="destino" required>
+
+<label>Responsável Portaria</label>
+<input type="text" name="responsavel" required>
+
+<button class="btn btn-primario">Salvar</button>
+
+</form>
+
+<script>
+function ajustarCampos() {
+    let tipo = document.getElementById("tipo").value;
+
+    campo("campo-placa2", tipo === "BITREM");
+    campo("campo-lacre2", tipo === "BITREM");
+    campo("campo-lacre1", tipo !== "CAMINHAO");
+}
+
+function campo(id, mostrar) {
+    document.getElementById(id).style.display = mostrar ? "block" : "none";
+}
+</script>
+
+{% endblock %}
