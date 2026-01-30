@@ -2,6 +2,7 @@ from flask import Flask, render_template, request, redirect, send_file
 import sqlite3
 from datetime import datetime, date
 import pandas as pd
+import os  # <-- Importado para ler a porta do servidor
 
 app = Flask(__name__)
 DB = 'database.db'
@@ -63,24 +64,23 @@ def novo():
 
         con = conectar()
         con.execute("""
-    INSERT INTO portaria VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-""", (
-    dados.get('unidade', ''),
-    dados.get('evento', ''),
-    data_hora,
-    dados.get('motorista', ''),
-    dados.get('cavalo', ''),
-    dados.get('km', ''),
-    dados.get('tipo_conjunto', ''),
-    dados.get('placa1', ''),
-    dados.get('placa2', ''),
-    dados.get('lacre1', ''),
-    dados.get('lacre2', ''),
-    dados.get('destino', ''),
-    dados.get('operacao', ''),
-    dados.get('responsavel', '')
-))
-
+            INSERT INTO portaria VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        """, (
+            dados.get('unidade', ''),
+            dados.get('evento', ''),
+            data_hora,
+            dados.get('motorista', ''),
+            dados.get('cavalo', ''),
+            dados.get('km', ''),
+            dados.get('tipo_conjunto', ''),
+            dados.get('placa1', ''),
+            dados.get('placa2', ''),
+            dados.get('lacre1', ''),
+            dados.get('lacre2', ''),
+            dados.get('destino', ''),
+            dados.get('operacao', ''),
+            dados.get('responsavel', '')
+        ))
 
         con.commit()
         con.close()
@@ -156,6 +156,9 @@ def exportar():
     return send_file(arquivo, as_attachment=True)
 
 
+# ---------- INICIALIZAÇÃO AJUSTADA PARA VPS/RAILWAY ----------
 if __name__ == '__main__':
-    #app.run(debug=True)
-    app.run()
+    # O Railway usa a variável PORT, se não encontrar (local), usa a 5000
+    port = int(os.environ.get("PORT", 5000))
+    # host='0.0.0.0' permite conexões externas no servidor
+    app.run(host='0.0.0.0', port=port)
