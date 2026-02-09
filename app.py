@@ -32,11 +32,13 @@ def criar_tabela():
             lacre2 TEXT,
             destino TEXT,
             operacao TEXT,
+            status TEXT,
             responsavel TEXT
         )
     """)
     con.commit()
     con.close()
+
 
 
 criar_tabela()
@@ -64,23 +66,25 @@ def novo():
 
         con = conectar()
         con.execute("""
-            INSERT INTO portaria VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
-        """, (
-            dados.get('unidade', ''),
-            dados.get('evento', ''),
-            data_hora,
-            dados.get('motorista', ''),
-            dados.get('cavalo', ''),
-            dados.get('km', ''),
-            dados.get('tipo_conjunto', ''),
-            dados.get('placa1', ''),
-            dados.get('placa2', ''),
-            dados.get('lacre1', ''),
-            dados.get('lacre2', ''),
-            dados.get('destino', ''),
-            dados.get('operacao', ''),
-            dados.get('responsavel', '')
-        ))
+        INSERT INTO portaria VALUES (NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+    """, (
+        dados['unidade'],
+        dados['evento'],
+        data_hora,
+        dados['motorista'],
+        dados['cavalo'],
+        dados['km'],
+        dados['tipo_conjunto'],
+        dados.get('placa1'),
+        dados.get('placa2'),
+        dados.get('lacre1'),
+        dados.get('lacre2'),
+        dados['destino'],
+        dados['operacao'],
+        dados['status'],
+        dados['responsavel']
+    ))
+
 
         con.commit()
         con.close()
@@ -102,26 +106,29 @@ def editar(id):
             return "Erro: Saída sem placa não é permitida"
 
         con.execute("""
-            UPDATE portaria SET
-                unidade=?, evento=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
-                placa1=?, placa2=?, lacre1=?, lacre2=?, destino=?, operacao=?, responsavel=?
-            WHERE id=?
-        """, (
-            dados['unidade'],
-            dados['evento'],
-            dados['motorista'],
-            dados['cavalo'],
-            dados['km'],
-            dados['tipo_conjunto'],
-            dados.get('placa1'),
-            dados.get('placa2'),
-            dados.get('lacre1'),
-            dados.get('lacre2'),
-            dados['destino'],
-            dados.get('operacao'),
-            dados['responsavel'],
-            id
-        ))
+    UPDATE portaria SET
+        unidade=?, evento=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
+        placa1=?, placa2=?, lacre1=?, lacre2=?, destino=?,
+        operacao=?, status=?, responsavel=?
+    WHERE id=?
+""", (
+    dados['unidade'],
+    dados['evento'],
+    dados['motorista'],
+    dados['cavalo'],
+    dados['km'],
+    dados['tipo_conjunto'],
+    dados.get('placa1'),
+    dados.get('placa2'),
+    dados.get('lacre1'),
+    dados.get('lacre2'),
+    dados['destino'],
+    dados['operacao'],
+    dados['status'],
+    dados['responsavel'],
+    id
+))
+
         con.commit()
         con.close()
         return redirect('/')
