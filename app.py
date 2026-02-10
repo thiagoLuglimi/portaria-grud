@@ -127,17 +127,25 @@ def index():
     con = conectar()
 
     if session['perfil'] == 'ADMIN':
-        dados = con.execute(
-            "SELECT * FROM portaria ORDER BY data_hora DESC"
-        ).fetchall()
+        dados = con.execute("""
+            SELECT 
+                portaria.*,
+                usuarios.nome AS nome_porteiro
+            FROM portaria
+            LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
+            ORDER BY data_hora DESC
+        """).fetchall()
     else:
-        dados = con.execute(
-            "SELECT * FROM portaria WHERE usuario_id=? ORDER BY data_hora DESC",
-            (session['usuario_id'],)
-        ).fetchall()
+        dados = con.execute("""
+            SELECT *
+            FROM portaria
+            WHERE usuario_id = ?
+            ORDER BY data_hora DESC
+        """, (session['usuario_id'],)).fetchall()
 
     con.close()
     return render_template('index.html', dados=dados)
+
 
 
 @app.route('/novo', methods=['GET', 'POST'])

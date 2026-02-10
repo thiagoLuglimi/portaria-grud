@@ -2,7 +2,6 @@
 
 {% block conteudo %}
 
-
 <a href="/exportar" class="btn-relatorio">
     📊 Exportar relatório de hoje
 </a>
@@ -18,6 +17,11 @@
         <th>ID</th>
         <th>Evento</th>
         <th>Data/Hora</th>
+
+        {% if session.perfil == 'ADMIN' %}
+        <th>Porteiro</th>
+        {% endif %}
+
         <th>Placa</th>
         <th>Destino</th>
         <th>Ações</th>
@@ -28,11 +32,16 @@
         <td>{{ r[0] }}</td>
         <td>{{ r[2] }}</td>
         <td>{{ r[3] }}</td>
+
+        {% if session.perfil == 'ADMIN' %}
+        <td>{{ r['nome_porteiro'] }}</td>
+        {% endif %}
+
         <td>{{ r[8] }}</td>
         <td>{{ r[12] }}</td>
         <td class="acoes">
             <a href="/editar/{{ r[0] }}" class="btn-editar">Editar</a>
-            <a href="/excluir/{{ r[0] }}" 
+            <a href="/excluir/{{ r[0] }}"
                class="btn-excluir"
                onclick="return confirm('Deseja excluir este registro?')">
                Excluir
@@ -41,7 +50,6 @@
     </tr>
     {% endfor %}
 </table>
-
 </div>
 
 {% endblock %}
