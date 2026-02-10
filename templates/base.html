@@ -6,16 +6,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    {% if session.perfil == 'ADMIN' %}
-    <a href="/usuarios">Usuários</a>
-{% endif %}
-
 </head>
 <body>
 
 <header class="topo">
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
     <h1>Controle de Portaria</h1>
+
+    <nav class="menu">
+        <a href="/">Início</a>
+        <a href="/novo">Novo Registro</a>
+
+        {% if session.perfil == 'ADMIN' %}
+            <a href="/usuarios">Usuários</a>
+        {% endif %}
+
+        <a href="/logout">Sair</a>
+    </nav>
 </header>
 
 <main class="container">
@@ -23,7 +30,7 @@
 </main>
 
 <footer class="rodape">
-    Rodovitor Transportes © {{ 2026 }}
+    Rodovitor Transportes © 2026
 </footer>
 
 </body>
