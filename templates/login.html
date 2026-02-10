@@ -1,25 +1,35 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-br">
 <head>
-    <title>Login - Portaria</title>
+    <meta charset="UTF-8">
+    <title>Login | Portaria</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="{{ url_for('static', filename='login.css') }}">
 </head>
 <body>
-    <h2>Login</h2>
 
-    {% with messages = get_flashed_messages() %}
-      {% if messages %}
-        <p style="color:red">{{ messages[0] }}</p>
-      {% endif %}
-    {% endwith %}
+<div class="login-container">
+    <div class="login-card">
+        <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
 
-    <form method="post">
-        <label>Usuário:</label><br>
-        <input type="text" name="usuario" required><br><br>
+        <h2>Controle de Portaria</h2>
+        <p>Acesso restrito</p>
 
-        <label>Senha:</label><br>
-        <input type="password" name="senha" required><br><br>
+        {% with messages = get_flashed_messages() %}
+        {% if messages %}
+            <div class="erro">{{ messages[0] }}</div>
+        {% endif %}
+        {% endwith %}
 
-        <button type="submit">Entrar</button>
-    </form>
+        <form method="POST">
+            <input type="text" name="usuario" placeholder="Usuário" required>
+            <input type="password" name="senha" placeholder="Senha" required>
+
+            <button type="submit">Entrar</button>
+        </form>
+    </div>
+</div>
+
 </body>
 </html>
