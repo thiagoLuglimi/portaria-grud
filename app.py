@@ -5,7 +5,17 @@ from datetime import datetime, date
 import pandas as pd
 import os
 
+def login_required(f):
+    @wraps(f)
+    def decorated_function(*args, **kwargs):
+        if 'usuario_id' not in session:
+            return redirect('/login')
+        return f(*args, **kwargs)
+    return decorated_function
+
+
 app = Flask(__name__)
+app.secret_key = 'chave-super-segura'
 app.secret_key = 'portaria_secreta_123'
 
 DB = 'database.db'
@@ -270,6 +280,38 @@ def exportar():
     arquivo = f"relatorio_portaria_{hoje}.xlsx"
     df.to_excel(arquivo, index=False)
     return send_file(arquivo, as_attachment=True)
+
+
+
+@app.route('/usuarios', methods=['GET', 'POST'])
+@login_required
+def usuarios():
+    # Apenas ADMIN pode acessar
+    if session['perfil'] != 'ADMIN':
+        return "Acesso negado"
+
+    con = conectar()
+
+    if request.method == 'POST':
+        nome = request.form['nome']
+        usuario = request.form['usuario']
+        senha = request.form['senha']
+        perfil = request.form['perfil']
+
+        try:
+            con.execute("""
+                INSERT INTO usuarios (nome, usuario, senha, perfil)
+                VALUES (?, ?, ?, ?)
+            """, (nome, usuario, senha, perfil))
+            con.commit()
+        except sqlite3.IntegrityError:
+            con.close()
+            return "Usuário já existe"
+
+    usuarios = con.execute("SELECT id, nome, usuario, perfil FROM usuarios").fetchall()
+    con.close()
+
+    return render_template('usuarios.html', usuarios=usuarios)
 
 
 # ---------- INICIALIZAÇÃO ----------
