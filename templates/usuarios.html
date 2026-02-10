@@ -24,19 +24,23 @@
 
 <hr>
 
-<h3>Usuários cadastrados</h3>
-
 <table>
     <tr>
         <th>Nome</th>
         <th>Usuário</th>
         <th>Perfil</th>
+        <th>Ações</th>
     </tr>
     {% for u in usuarios %}
     <tr>
         <td>{{ u[1] }}</td>
         <td>{{ u[2] }}</td>
-        <td>{{ u[3] }}</td>
+        <td>{{ u[4] }}</td>
+        <td>
+            <a href="/usuarios/excluir/{{ u[0] }}" onclick="return confirm('Excluir usuário?')">
+                Excluir
+            </a>
+        </td>
     </tr>
     {% endfor %}
 </table>

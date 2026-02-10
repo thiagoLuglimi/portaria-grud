@@ -5,17 +5,7 @@ from datetime import datetime, date
 import pandas as pd
 import os
 
-def login_required(f):
-    @wraps(f)
-    def decorated_function(*args, **kwargs):
-        if 'usuario_id' not in session:
-            return redirect('/login')
-        return f(*args, **kwargs)
-    return decorated_function
-
-
 app = Flask(__name__)
-app.secret_key = 'chave-super-segura'
 app.secret_key = 'portaria_secreta_123'
 
 DB = 'database.db'
@@ -27,9 +17,20 @@ def conectar():
     return conn
 
 
-def criar_tabela():
+def criar_tabelas():
     con = conectar()
     cur = con.cursor()
+
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS usuarios (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            nome TEXT,
+            usuario TEXT UNIQUE,
+            senha TEXT,
+            perfil TEXT
+        )
+    """)
+
     cur.execute("""
         CREATE TABLE IF NOT EXISTS portaria (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -51,37 +52,23 @@ def criar_tabela():
             usuario_id INTEGER
         )
     """)
-    con.commit()
-    con.close()
 
+    # cria admin padrão
+    admin = cur.execute(
+        "SELECT * FROM usuarios WHERE usuario='admin'"
+    ).fetchone()
 
-def criar_tabela_usuarios():
-    con = conectar()
-    cur = con.cursor()
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            nome TEXT,
-            usuario TEXT UNIQUE,
-            senha TEXT,
-            perfil TEXT
-        )
-    """)
-
-    # cria admin padrão se não existir
-    admin = cur.execute("SELECT * FROM usuarios WHERE usuario='admin'").fetchone()
     if not admin:
         cur.execute("""
             INSERT INTO usuarios (nome, usuario, senha, perfil)
-            VALUES ('Administrador', 'admin', 'admin123', 'admin')
+            VALUES ('Administrador', 'admin', 'admin123', 'ADMIN')
         """)
 
     con.commit()
     con.close()
 
 
-criar_tabela()
-criar_tabela_usuarios()
+criar_tabelas()
 
 # ---------- SEGURANÇA ----------
 def login_required(f):
@@ -89,6 +76,15 @@ def login_required(f):
     def decorated(*args, **kwargs):
         if 'usuario_id' not in session:
             return redirect(url_for('login'))
+        return f(*args, **kwargs)
+    return decorated
+
+
+def admin_required(f):
+    @wraps(f)
+    def decorated(*args, **kwargs):
+        if session.get('perfil') != 'ADMIN':
+            return "Acesso negado", 403
         return f(*args, **kwargs)
     return decorated
 
@@ -109,11 +105,11 @@ def login():
 
         if user:
             session['usuario_id'] = user['id']
-            session['perfil'] = user['perfil']
             session['nome'] = user['nome']
+            session['perfil'] = user['perfil']
             return redirect(url_for('index'))
-        else:
-            flash('Usuário ou senha inválidos')
+
+        flash('Usuário ou senha inválidos')
 
     return render_template('login.html')
 
@@ -124,13 +120,13 @@ def logout():
     return redirect(url_for('login'))
 
 
-# ---------- ROTAS ----------
+# ---------- PORTARIA ----------
 @app.route('/')
 @login_required
 def index():
     con = conectar()
 
-    if session['perfil'] == 'admin':
+    if session['perfil'] == 'ADMIN':
         dados = con.execute(
             "SELECT * FROM portaria ORDER BY data_hora DESC"
         ).fetchall()
@@ -175,7 +171,7 @@ def novo():
             dados['destino'],
             dados['operacao'],
             dados['status'],
-            dados['responsavel'],
+            session['nome'],            # RESPONSÁVEL AUTOMÁTICO
             session['usuario_id']
         ))
 
@@ -190,26 +186,21 @@ def novo():
 @login_required
 def editar(id):
     con = conectar()
-
     registro = con.execute(
         "SELECT * FROM portaria WHERE id=?", (id,)
     ).fetchone()
 
-    # porteiro só edita o que criou
-    if session['perfil'] != 'admin' and registro['usuario_id'] != session['usuario_id']:
+    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
         return "Acesso negado"
 
     if request.method == 'POST':
         dados = request.form
 
-        if dados['evento'] == 'SAIDA' and not dados.get('placa1'):
-            return "Erro: Saída sem placa não é permitida"
-
         con.execute("""
             UPDATE portaria SET
                 unidade=?, evento=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
                 placa1=?, placa2=?, lacre1=?, lacre2=?, destino=?,
-                operacao=?, status=?, responsavel=?
+                operacao=?, status=?
             WHERE id=?
         """, (
             dados['unidade'],
@@ -225,7 +216,6 @@ def editar(id):
             dados['destino'],
             dados['operacao'],
             dados['status'],
-            dados['responsavel'],
             id
         ))
 
@@ -241,12 +231,11 @@ def editar(id):
 @login_required
 def excluir(id):
     con = conectar()
-
     registro = con.execute(
         "SELECT * FROM portaria WHERE id=?", (id,)
     ).fetchone()
 
-    if session['perfil'] != 'admin' and registro['usuario_id'] != session['usuario_id']:
+    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
         return "Acesso negado"
 
     con.execute("DELETE FROM portaria WHERE id=?", (id,))
@@ -261,7 +250,7 @@ def exportar():
     hoje = date.today().strftime('%Y-%m-%d')
     con = conectar()
 
-    if session['perfil'] == 'admin':
+    if session['perfil'] == 'ADMIN':
         df = pd.read_sql_query(
             "SELECT * FROM portaria WHERE date(data_hora)=?",
             con, params=(hoje,)
@@ -282,39 +271,35 @@ def exportar():
     return send_file(arquivo, as_attachment=True)
 
 
-
+# ---------- USUÁRIOS ----------
 @app.route('/usuarios', methods=['GET', 'POST'])
 @login_required
+@admin_required
 def usuarios():
-    # Apenas ADMIN pode acessar
-    if session['perfil'] != 'ADMIN':
-        return "Acesso negado"
-
     con = conectar()
 
     if request.method == 'POST':
-        nome = request.form['nome']
-        usuario = request.form['usuario']
-        senha = request.form['senha']
-        perfil = request.form['perfil']
+        con.execute("""
+            INSERT INTO usuarios (nome, usuario, senha, perfil)
+            VALUES (?, ?, ?, ?)
+        """, (
+            request.form['nome'],
+            request.form['usuario'],
+            request.form['senha'],
+            request.form['perfil']
+        ))
+        con.commit()
 
-        try:
-            con.execute("""
-                INSERT INTO usuarios (nome, usuario, senha, perfil)
-                VALUES (?, ?, ?, ?)
-            """, (nome, usuario, senha, perfil))
-            con.commit()
-        except sqlite3.IntegrityError:
-            con.close()
-            return "Usuário já existe"
-
-    usuarios = con.execute("SELECT id, nome, usuario, perfil FROM usuarios").fetchall()
+    usuarios = con.execute(
+        "SELECT id, nome, usuario, perfil FROM usuarios"
+    ).fetchall()
     con.close()
 
     return render_template('usuarios.html', usuarios=usuarios)
 
 
-# ---------- INICIALIZAÇÃO ----------
+# ---------- START ----------
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
