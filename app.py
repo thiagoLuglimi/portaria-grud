@@ -27,8 +27,7 @@ def criar_tabelas():
             nome TEXT,
             usuario TEXT UNIQUE,
             senha TEXT,
-            perfil TEXT,
-            unidade TEXT
+            perfil TEXT
         )
     """)
 
@@ -54,14 +53,15 @@ def criar_tabelas():
         )
     """)
 
+    # cria admin padrão
     admin = cur.execute(
         "SELECT * FROM usuarios WHERE usuario='admin'"
     ).fetchone()
 
     if not admin:
         cur.execute("""
-            INSERT INTO usuarios (nome, usuario, senha, perfil, unidade)
-            VALUES ('Administrador', 'admin', 'admin123', 'ADMIN', 'TODAS')
+            INSERT INTO usuarios (nome, usuario, senha, perfil)
+            VALUES ('Administrador', 'admin', 'admin123', 'ADMIN')
         """)
 
     con.commit()
@@ -107,7 +107,6 @@ def login():
             session['usuario_id'] = user['id']
             session['nome'] = user['nome']
             session['perfil'] = user['perfil']
-            session['unidade'] = user['unidade']
             return redirect(url_for('index'))
 
         flash('Usuário ou senha inválidos')
@@ -129,7 +128,9 @@ def index():
 
     if session['perfil'] == 'ADMIN':
         dados = con.execute("""
-            SELECT portaria.*, usuarios.nome AS nome_porteiro
+            SELECT 
+                portaria.*,
+                usuarios.nome AS nome_porteiro
             FROM portaria
             LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
             ORDER BY data_hora DESC
@@ -138,12 +139,13 @@ def index():
         dados = con.execute("""
             SELECT *
             FROM portaria
-            WHERE unidade = ?
+            WHERE usuario_id = ?
             ORDER BY data_hora DESC
-        """, (session['unidade'],)).fetchall()
+        """, (session['usuario_id'],)).fetchall()
 
     con.close()
     return render_template('index.html', dados=dados)
+
 
 
 @app.route('/novo', methods=['GET', 'POST'])
@@ -151,6 +153,10 @@ def index():
 def novo():
     if request.method == 'POST':
         dados = request.form
+
+        if dados.get('evento') == 'SAIDA' and not dados.get('placa1'):
+            return "Erro: Saída sem placa não é permitida"
+
         data_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
 
         con = conectar()
@@ -159,7 +165,7 @@ def novo():
                 NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
             )
         """, (
-            session['unidade'],
+            dados['unidade'],
             dados['evento'],
             data_hora,
             dados['motorista'],
@@ -173,7 +179,7 @@ def novo():
             dados['destino'],
             dados['operacao'],
             dados['status'],
-            session['nome'],
+            session['nome'],            # RESPONSÁVEL AUTOMÁTICO
             session['usuario_id']
         ))
 
@@ -184,35 +190,68 @@ def novo():
     return render_template('form.html', registro=None)
 
 
-# ---------- USUÁRIOS ----------
-@app.route('/usuarios', methods=['GET', 'POST'])
+@app.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
-@admin_required
-def usuarios():
+def editar(id):
     con = conectar()
+    registro = con.execute(
+        "SELECT * FROM portaria WHERE id=?", (id,)
+    ).fetchone()
+
+    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
+        return "Acesso negado"
 
     if request.method == 'POST':
+        dados = request.form
+
         con.execute("""
-            INSERT INTO usuarios (nome, usuario, senha, perfil, unidade)
-            VALUES (?, ?, ?, ?, ?)
+            UPDATE portaria SET
+                unidade=?, evento=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
+                placa1=?, placa2=?, lacre1=?, lacre2=?, destino=?,
+                operacao=?, status=?
+            WHERE id=?
         """, (
-            request.form['nome'],
-            request.form['usuario'],
-            request.form['senha'],
-            request.form['perfil'],
-            request.form['unidade']
+            dados['unidade'],
+            dados['evento'],
+            dados['motorista'],
+            dados['cavalo'],
+            dados['km'],
+            dados['tipo_conjunto'],
+            dados.get('placa1'),
+            dados.get('placa2'),
+            dados.get('lacre1'),
+            dados.get('lacre2'),
+            dados['destino'],
+            dados['operacao'],
+            dados['status'],
+            id
         ))
+
         con.commit()
+        con.close()
+        return redirect('/')
 
-    usuarios = con.execute(
-        "SELECT id, nome, usuario, perfil, unidade FROM usuarios"
-    ).fetchall()
     con.close()
+    return render_template('form.html', registro=registro)
 
-    return render_template('usuarios.html', usuarios=usuarios)
+
+@app.route('/excluir/<int:id>')
+@login_required
+def excluir(id):
+    con = conectar()
+    registro = con.execute(
+        "SELECT * FROM portaria WHERE id=?", (id,)
+    ).fetchone()
+
+    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
+        return "Acesso negado"
+
+    con.execute("DELETE FROM portaria WHERE id=?", (id,))
+    con.commit()
+    con.close()
+    return redirect('/')
 
 
-# ---------- EXPORTAR ----------
 @app.route('/exportar')
 @login_required
 def exportar():
@@ -226,8 +265,11 @@ def exportar():
         )
     else:
         df = pd.read_sql_query(
-            "SELECT * FROM portaria WHERE date(data_hora)=? AND unidade=?",
-            con, params=(hoje, session['unidade'])
+            """
+            SELECT * FROM portaria
+            WHERE date(data_hora)=? AND usuario_id=?
+            """,
+            con, params=(hoje, session['usuario_id'])
         )
 
     con.close()
@@ -237,7 +279,35 @@ def exportar():
     return send_file(arquivo, as_attachment=True)
 
 
+# ---------- USUÁRIOS ----------
+@app.route('/usuarios', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def usuarios():
+    con = conectar()
+
+    if request.method == 'POST':
+        con.execute("""
+            INSERT INTO usuarios (nome, usuario, senha, perfil)
+            VALUES (?, ?, ?, ?)
+        """, (
+            request.form['nome'],
+            request.form['usuario'],
+            request.form['senha'],
+            request.form['perfil']
+        ))
+        con.commit()
+
+    usuarios = con.execute(
+        "SELECT id, nome, usuario, perfil FROM usuarios"
+    ).fetchall()
+    con.close()
+
+    return render_template('usuarios.html', usuarios=usuarios)
+
+
 # ---------- START ----------
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 5000))
     app.run(host='0.0.0.0', port=port)
+
