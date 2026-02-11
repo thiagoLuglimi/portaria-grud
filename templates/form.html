@@ -3,17 +3,8 @@
 
 <form method="POST" class="card">
 
-<label>Unidade</label>
-<select name="unidade" required>
-    <option value="">Selecione</option>
-    <option value="BEL">BEL</option>
-    <option value="GRU">GRU</option>
-    <option value="CWB">CWB</option>
-    <option value="BNU">BNU</option>
-    <option value="MAO">MAO</option>
-    <option value="MAB">MAB</option>
-    <option value="PAR">PAR</option>
-</select>
+<!-- UNIDADE AUTOMÁTICA PELO USUÁRIO -->
+<input type="hidden" name="unidade" value="{{ session.unidade }}">
 
 <label>Evento</label>
 <select name="evento" required>
@@ -75,12 +66,8 @@
     <option value="VAZIO">Vazio</option>
 </select>
 
-
 <label>Destino / Operação</label>
 <input type="text" name="destino" required>
-
-<label>Responsável Portaria</label>
-<input type="text" name="responsavel" required>
 
 <button class="btn btn-primario">Salvar</button>
 
@@ -101,3 +88,4 @@ function campo(id, mostrar) {
 </script>
 
 {% endblock %}
+
