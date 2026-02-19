@@ -255,27 +255,36 @@ def excluir(id):
 @app.route('/exportar')
 @login_required
 def exportar():
-    hoje = date.today().strftime('%Y-%m-%d')
     con = conectar()
 
     if session['perfil'] == 'ADMIN':
         df = pd.read_sql_query(
-            "SELECT * FROM portaria WHERE date(data_hora)=?",
-            con, params=(hoje,)
+            """
+            SELECT 
+                portaria.*,
+                usuarios.nome AS nome_porteiro
+            FROM portaria
+            LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
+            ORDER BY data_hora DESC
+            """,
+            con
         )
     else:
         df = pd.read_sql_query(
             """
-            SELECT * FROM portaria
-            WHERE date(data_hora)=? AND usuario_id=?
+            SELECT *
+            FROM portaria
+            WHERE usuario_id=?
+            ORDER BY data_hora DESC
             """,
-            con, params=(hoje, session['usuario_id'])
+            con, params=(session['usuario_id'],)
         )
 
     con.close()
 
-    arquivo = f"relatorio_portaria_{hoje}.xlsx"
+    arquivo = "relatorio_portaria_geral.xlsx"
     df.to_excel(arquivo, index=False)
+
     return send_file(arquivo, as_attachment=True)
 
 
