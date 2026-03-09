@@ -2,8 +2,11 @@ from flask import Flask, render_template, request, redirect, url_for, session, f
 import sqlite3
 from functools import wraps
 from datetime import datetime, date
+from datetime import datetime
+from zoneinfo import ZoneInfo
 import pandas as pd
 import os
+
 
 app = Flask(__name__)
 app.secret_key = 'portaria_secreta_123'
@@ -157,8 +160,7 @@ def novo():
         if dados.get('evento') == 'SAIDA' and not dados.get('placa1'):
             return "Erro: Saída sem placa não é permitida"
 
-        data_hora = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-
+        data_hora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime('%Y-%m-%d %H:%M:%S')
         con = conectar()
         con.execute("""
             INSERT INTO portaria VALUES (
