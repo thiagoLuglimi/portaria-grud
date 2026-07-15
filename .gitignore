@@ -4,3 +4,5 @@ __pycache__/
 venv/
 database.db
 .instance/
+*.xlsx
+*.db

@@ -262,6 +262,9 @@ def editar(id):
 def dashboard():
     con = conectar()
     df = pd.read_sql_query("SELECT * FROM portaria", con)
+    # Formata Data/Hora para padrão brasileiro
+    df['data_hora'] = pd.to_datetime(df['data_hora'])
+    df['data_hora'] = df['data_hora'].dt.strftime('%d/%m/%Y %H:%M:%S')
     con.close()
 
     if df.empty:
