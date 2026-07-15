@@ -2,13 +2,28 @@
 
 {% block conteudo %}
 
-<a href="/exportar" class="btn-relatorio">
-    📊 Exportar relatório de hoje
-</a>
+<form action="/exportar" method="GET" class="filtro-exportar">
+
+    <div class="campo-data">
+        <label>Data Inicial</label>
+        <input type="date" name="inicio" required>
+    </div>
+
+    <div class="campo-data">
+        <label>Data Final</label>
+        <input type="date" name="fim" required>
+    </div>
+
+    <button type="submit" class="btn-relatorio">
+        📊 Exportar Excel
+    </button>
+
+</form>
 
 <div class="acoes">
     <a href="/novo" class="btn btn-primario">+ Novo Registro</a>
     <a href="/relatorio" class="btn btn-secundario">📊 Relatório Diário</a>
+    <a href="/dashboard" class="btn btn-dark">📊 Dashboard</a>
 </div>
 
 <div class="tabela-wrapper">

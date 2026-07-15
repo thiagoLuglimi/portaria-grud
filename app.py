@@ -1,12 +1,10 @@
 from flask import Flask, render_template, request, redirect, url_for, session, flash, send_file
 import sqlite3
 from functools import wraps
-from datetime import datetime, date
 from datetime import datetime
 from zoneinfo import ZoneInfo
 import pandas as pd
 import os
-
 
 app = Flask(__name__)
 app.secret_key = 'portaria_secreta_123'
@@ -18,7 +16,6 @@ def conectar():
     conn = sqlite3.connect(DB)
     conn.row_factory = sqlite3.Row
     return conn
-
 
 def criar_tabelas():
     con = conectar()
@@ -56,10 +53,15 @@ def criar_tabelas():
         )
     """)
 
-    # cria admin padrão
-    admin = cur.execute(
-        "SELECT * FROM usuarios WHERE usuario='admin'"
-    ).fetchone()
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS veiculos (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        placa TEXT UNIQUE NOT NULL,
+        ativo INTEGER DEFAULT 1
+    )
+""")
+
+    admin = cur.execute("SELECT * FROM usuarios WHERE usuario='admin'").fetchone()
 
     if not admin:
         cur.execute("""
@@ -69,7 +71,6 @@ def criar_tabelas():
 
     con.commit()
     con.close()
-
 
 criar_tabelas()
 
@@ -81,16 +82,6 @@ def login_required(f):
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated
-
-
-def admin_required(f):
-    @wraps(f)
-    def decorated(*args, **kwargs):
-        if session.get('perfil') != 'ADMIN':
-            return "Acesso negado", 403
-        return f(*args, **kwargs)
-    return decorated
-
 
 # ---------- LOGIN ----------
 @app.route('/login', methods=['GET', 'POST'])
@@ -116,12 +107,10 @@ def login():
 
     return render_template('login.html')
 
-
 @app.route('/logout')
 def logout():
     session.clear()
     return redirect(url_for('login'))
-
 
 # ---------- PORTARIA ----------
 @app.route('/')
@@ -129,59 +118,55 @@ def logout():
 def index():
     con = conectar()
 
-    if session['perfil'] == 'ADMIN':
-        dados = con.execute("""
-            SELECT 
-                portaria.*,
-                usuarios.nome AS nome_porteiro
-            FROM portaria
-            LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
-            ORDER BY data_hora DESC
-        """).fetchall()
-    else:
-        dados = con.execute("""
-            SELECT *
-            FROM portaria
-            WHERE usuario_id = ?
-            ORDER BY data_hora DESC
-        """, (session['usuario_id'],)).fetchall()
+    dados = con.execute("""
+        SELECT portaria.*, usuarios.nome AS nome_porteiro
+        FROM portaria
+        LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
+        ORDER BY data_hora DESC
+    """).fetchall()
 
     con.close()
     return render_template('index.html', dados=dados)
 
-
-
+# ---------- NOVO ----------
 @app.route('/novo', methods=['GET', 'POST'])
 @login_required
 def novo():
     if request.method == 'POST':
         dados = request.form
 
-        if dados.get('evento') == 'SAIDA' and not dados.get('placa1'):
-            return "Erro: Saída sem placa não é permitida"
+        # DATA CORRIGIDA
+        data_hora = dados.get('data_hora')
 
-        data_hora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime('%Y-%m-%d %H:%M:%S')
+        if data_hora:
+            data_hora = datetime.fromisoformat(data_hora).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            data_hora = datetime.now(ZoneInfo("America/Sao_Paulo")).strftime('%Y-%m-%d %H:%M:%S')
+
         con = conectar()
         con.execute("""
-            INSERT INTO portaria VALUES (
-                NULL,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?
+            INSERT INTO portaria (
+                unidade, evento, data_hora, motorista, cavalo, km,
+                tipo_conjunto, placa1, placa2, lacre1, lacre2,
+                destino, operacao, status, responsavel, usuario_id
             )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (
-            dados['unidade'],
-            dados['evento'],
+            dados.get('unidade'),
+            dados.get('evento'),
             data_hora,
-            dados['motorista'],
-            dados['cavalo'],
-            dados['km'],
-            dados['tipo_conjunto'],
+            dados.get('motorista'),
+            dados.get('cavalo'),
+            dados.get('km'),
+            dados.get('tipo_conjunto'),
             dados.get('placa1'),
             dados.get('placa2'),
             dados.get('lacre1'),
             dados.get('lacre2'),
-            dados['destino'],
-            dados['operacao'],
-            dados['status'],
-            session['nome'],            # RESPONSÁVEL AUTOMÁTICO
+            dados.get('destino'),
+            dados.get('operacao'),
+            dados.get('status'),
+            session['nome'],
             session['usuario_id']
         ))
 
@@ -189,43 +174,63 @@ def novo():
         con.close()
         return redirect('/')
 
-    return render_template('form.html', registro=None)
+    #return render_template('form.html', registro=None)
 
+    con = conectar()
 
+    placas = con.execute("""
+        SELECT placa
+        FROM veiculos
+        WHERE ativo = 1
+        ORDER BY placa
+    """).fetchall()
+
+    con.close()
+
+    return render_template(
+        "form.html",
+        registro=None,
+        placas=placas
+    )
+
+# ---------- EDITAR ----------
 @app.route('/editar/<int:id>', methods=['GET', 'POST'])
 @login_required
 def editar(id):
     con = conectar()
-    registro = con.execute(
-        "SELECT * FROM portaria WHERE id=?", (id,)
-    ).fetchone()
-
-    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
-        return "Acesso negado"
+    registro = con.execute("SELECT * FROM portaria WHERE id=?", (id,)).fetchone()
 
     if request.method == 'POST':
         dados = request.form
 
+        data_hora = dados.get('data_hora')
+
+        if data_hora:
+            data_hora = datetime.fromisoformat(data_hora).strftime('%Y-%m-%d %H:%M:%S')
+        else:
+            data_hora = registro['data_hora']
+
         con.execute("""
             UPDATE portaria SET
-                unidade=?, evento=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
+                unidade=?, evento=?, data_hora=?, motorista=?, cavalo=?, km=?, tipo_conjunto=?,
                 placa1=?, placa2=?, lacre1=?, lacre2=?, destino=?,
                 operacao=?, status=?
             WHERE id=?
         """, (
-            dados['unidade'],
-            dados['evento'],
-            dados['motorista'],
-            dados['cavalo'],
-            dados['km'],
-            dados['tipo_conjunto'],
+            dados.get('unidade'),
+            dados.get('evento'),
+            data_hora,
+            dados.get('motorista'),
+            dados.get('cavalo'),
+            dados.get('km'),
+            dados.get('tipo_conjunto'),
             dados.get('placa1'),
             dados.get('placa2'),
             dados.get('lacre1'),
             dados.get('lacre2'),
-            dados['destino'],
-            dados['operacao'],
-            dados['status'],
+            dados.get('destino'),
+            dados.get('operacao'),
+            dados.get('status'),
             id
         ))
 
@@ -233,92 +238,145 @@ def editar(id):
         con.close()
         return redirect('/')
 
+    #con.close()
+    #return render_template('form.html', registro=registro)
+
+    placas = con.execute("""
+        SELECT placa
+        FROM veiculos
+        WHERE ativo = 1
+        ORDER BY placa
+    """).fetchall()
+
     con.close()
-    return render_template('form.html', registro=registro)
 
+    return render_template(
+        "form.html",
+        registro=registro,
+        placas=placas
+    )
 
-@app.route('/excluir/<int:id>')
+# ---------- DASHBOARD ----------
+@app.route('/dashboard')
 @login_required
-def excluir(id):
+def dashboard():
     con = conectar()
-    registro = con.execute(
-        "SELECT * FROM portaria WHERE id=?", (id,)
-    ).fetchone()
-
-    if session['perfil'] != 'ADMIN' and registro['usuario_id'] != session['usuario_id']:
-        return "Acesso negado"
-
-    con.execute("DELETE FROM portaria WHERE id=?", (id,))
-    con.commit()
+    df = pd.read_sql_query("SELECT * FROM portaria", con)
     con.close()
-    return redirect('/')
+
+    if df.empty:
+        return render_template("dashboard.html", tabela=[], kpis={})
+
+    df['evento'] = df['evento'].astype(str).str.upper().str.strip()
+
+    df['data_hora'] = pd.to_datetime(
+        df['data_hora'].astype(str).str.replace("T", " "),
+        errors='coerce'
+    )
+
+    df = df.dropna(subset=['data_hora'])
+
+    agora = datetime.now()
+
+    placas = df['placa1'].dropna().unique()
+
+    tabela = []
+    tempo_lista = []
+    patio = 0
+
+    for placa in placas:
+        df_placa = df[df['placa1'] == placa].sort_values('data_hora')
+
+        entrada = df_placa[df_placa['evento'] == 'ENTRADA'].tail(1)
+        saida = df_placa[df_placa['evento'] == 'SAIDA'].tail(1)
+
+        if not entrada.empty:
+            entrada_time = entrada.iloc[0]['data_hora']
+
+            if not saida.empty and saida.iloc[0]['data_hora'] > entrada_time:
+                tempo = saida.iloc[0]['data_hora'] - entrada_time
+                status = "FINALIZADO"
+            else:
+                tempo = agora - entrada_time
+                status = "NO PÁTIO"
+                patio += 1
+
+            horas = round(tempo.total_seconds() / 3600, 2)
+            tempo_lista.append(horas)
+
+            tabela.append({
+                "operacao": entrada.iloc[0]['operacao'],
+                "tipo": entrada.iloc[0]['tipo_conjunto'],
+                "placa": placa,
+                "status": status,
+                "tempo": horas
+            })
+
+    hoje = datetime.now().date()
+
+    entradas_hoje = len(df[(df['evento'] == 'ENTRADA') & (df['data_hora'].dt.date == hoje)])
+    saidas_hoje = len(df[(df['evento'] == 'SAIDA') & (df['data_hora'].dt.date == hoje)])
+
+    kpis = {
+        "patio": patio,
+        "entradas": entradas_hoje,
+        "saidas": saidas_hoje,
+        "tempo_medio": round(sum(tempo_lista)/len(tempo_lista), 2) if tempo_lista else 0
+    }
+
+    return render_template("dashboard.html", tabela=tabela, kpis=kpis)
 
 
+# ---------- EXPORTAR EXCEL ----------
 @app.route('/exportar')
 @login_required
 def exportar():
+
+    inicio = request.args.get("inicio")
+    fim = request.args.get("fim")
+
     con = conectar()
 
-    if session['perfil'] == 'ADMIN':
-        df = pd.read_sql_query(
-            """
-            SELECT 
-                portaria.*,
-                usuarios.nome AS nome_porteiro
-            FROM portaria
-            LEFT JOIN usuarios ON usuarios.id = portaria.usuario_id
-            ORDER BY data_hora DESC
-            """,
-            con
-        )
-    else:
-        df = pd.read_sql_query(
-            """
-            SELECT *
-            FROM portaria
-            WHERE usuario_id=?
-            ORDER BY data_hora DESC
-            """,
-            con, params=(session['usuario_id'],)
-        )
+    consulta = """
+        SELECT
+            id,
+            unidade,
+            evento,
+            data_hora,
+            motorista,
+            cavalo,
+            km,
+            tipo_conjunto,
+            placa1,
+            placa2,
+            lacre1,
+            lacre2,
+            destino,
+            operacao,
+            status,
+            responsavel
+        FROM portaria
+        WHERE DATE(data_hora) BETWEEN ? AND ?
+        ORDER BY data_hora
+    """
+
+    df = pd.read_sql_query(
+        consulta,
+        con,
+        params=(inicio, fim)
+    )
 
     con.close()
 
-    arquivo = "relatorio_portaria_geral.xlsx"
-    df.to_excel(arquivo, index=False)
+    nome = f"Relatorio_Portaria_{inicio}_a_{fim}.xlsx"
 
-    return send_file(arquivo, as_attachment=True)
+    df.to_excel(nome, index=False)
 
-
-# ---------- USUÁRIOS ----------
-@app.route('/usuarios', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def usuarios():
-    con = conectar()
-
-    if request.method == 'POST':
-        con.execute("""
-            INSERT INTO usuarios (nome, usuario, senha, perfil)
-            VALUES (?, ?, ?, ?)
-        """, (
-            request.form['nome'],
-            request.form['usuario'],
-            request.form['senha'],
-            request.form['perfil']
-        ))
-        con.commit()
-
-    usuarios = con.execute(
-        "SELECT id, nome, usuario, perfil FROM usuarios"
-    ).fetchall()
-    con.close()
-
-    return render_template('usuarios.html', usuarios=usuarios)
-
+    return send_file(
+        nome,
+        as_attachment=True
+    )
 
 # ---------- START ----------
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host='0.0.0.0', port=port)
-
+    app.run(debug=True)

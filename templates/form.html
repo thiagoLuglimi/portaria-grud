@@ -23,8 +23,28 @@
 <label>Motorista</label>
 <input type="text" name="motorista" required>
 
-<label>Cavalo Mecânico (Placa)</label>
-<input type="text" name="cavalo" required>
+<label>Cavalo Mecânico/Caminhão</label>
+
+<select
+    name="cavalo"
+    id="cavalo"
+    class="form-control"
+    required>
+
+    <option value="">Selecione uma placa...</option>
+
+    {% for placa in placas %}
+        <option
+            value="{{ placa['placa'] }}"
+            {% if registro and registro['cavalo'] == placa['placa'] %}
+                selected
+            {% endif %}
+        >
+            {{ placa['placa'] }}
+        </option>
+    {% endfor %}
+
+</select>
 
 <label>KM do Cavalo</label>
 <input type="text" name="km">
@@ -34,17 +54,54 @@
     <option value="">Selecione</option>
     <option value="BITREM">BITREM</option>
     <option value="LS">LS</option>
-    <option value="CAMINHAO">CAMINHÃO</option>
 </select>
 
 <div id="campo-placa1">
     <label>Placa 1</label>
-    <input type="text" name="placa1">
+
+    <select
+        name="placa1"
+        id="placa1"
+        class="form-control">
+
+        <option value="">Selecione...</option>
+
+        {% for placa in placas %}
+            <option
+                value="{{ placa['placa'] }}"
+                {% if registro and registro['placa1'] == placa['placa'] %}
+                    selected
+                {% endif %}
+            >
+                {{ placa['placa'] }}
+            </option>
+        {% endfor %}
+
+    </select>
 </div>
 
 <div id="campo-placa2">
     <label>Placa 2</label>
-    <input type="text" name="placa2">
+
+    <select
+        name="placa2"
+        id="placa2"
+        class="form-control">
+
+        <option value="">Selecione...</option>
+
+        {% for placa in placas %}
+            <option
+                value="{{ placa['placa'] }}"
+                {% if registro and registro['placa2'] == placa['placa'] %}
+                    selected
+                {% endif %}
+            >
+                {{ placa['placa'] }}
+            </option>
+        {% endfor %}
+
+    </select>
 </div>
 
 <div id="campo-lacre1">
@@ -56,6 +113,14 @@
     <label>Lacre 2</label>
     <input type="text" name="lacre2">
 </div>
+
+<div class="mb-3">
+    <label>Data e Hora</label>
+    <input type="datetime-local" name="data_hora" class="form-control"
+        value="{{ registro.data_hora[:16] if registro and registro.data_hora else '' }}">
+</div>
+
+
 
 <label>Tipo de Operação</label>
 <select name="operacao" required>
@@ -87,16 +152,30 @@
 
 <script>
 function ajustarCampos() {
+
     let tipo = document.getElementById("tipo").value;
 
-    campo("campo-placa2", tipo === "BITREM");
-    campo("campo-lacre2", tipo === "BITREM");
-    campo("campo-lacre1", tipo !== "CAMINHAO");
+    if (tipo === "BITREM") {
+
+        campo("campo-placa2", true);
+        campo("campo-lacre2", true);
+        campo("campo-lacre1", true);
+
+    } else {
+
+        // LS
+        campo("campo-placa2", false);
+        campo("campo-lacre2", false);
+        campo("campo-lacre1", true);
+
+    }
 }
 
 function campo(id, mostrar) {
     document.getElementById(id).style.display = mostrar ? "block" : "none";
 }
-</script>
 
+// Executa quando a página abre
+window.onload = ajustarCampos;
+</script>
 {% endblock %}

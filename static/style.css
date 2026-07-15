@@ -146,3 +146,25 @@ td {
     text-decoration: none;
     font-weight: bold;
 }
+
+.filtro-exportar{
+    display: flex;
+    align-items: end;
+    gap: 15px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.campo-data{
+    display: flex;
+    flex-direction: column;
+}
+
+.campo-data input{
+    width: 180px;
+}
+
+.campo-data label{
+    font-weight: bold;
+    margin-bottom: 5px;
+}

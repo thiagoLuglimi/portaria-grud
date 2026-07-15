@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Dashboard Portaria</title>
+
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+
+<style>
+body {
+    background: #0f172a;
+    color: #fff;
+}
+
+.card {
+    border: none;
+    border-radius: 15px;
+}
+
+.card-kpi {
+    background: linear-gradient(135deg, #1e293b, #334155);
+}
+
+.table {
+    color: #fff;
+}
+
+.badge-success { background: #22c55e; }
+.badge-danger { background: #ef4444; }
+
+</style>
+</head>
+
+<body>
+
+<div class="container mt-4">
+
+    <h2 class="mb-4">🚀 Dashboard Operacional</h2>
+
+    <div class="row mb-4">
+
+        <div class="col-md-3">
+            <div class="card card-kpi p-3 shadow">
+                <h6>🚛 NO PÁTIO</h6>
+                <h2>{{ kpis.patio }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card card-kpi p-3 shadow">
+                <h6>⬆️ ENTRADAS</h6>
+                <h2>{{ kpis.entradas }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card card-kpi p-3 shadow">
+                <h6>⬇️ SAÍDAS</h6>
+                <h2>{{ kpis.saidas }}</h2>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="card card-kpi p-3 shadow">
+                <h6>⏱️ TEMPO MÉDIO (H)</h6>
+                <h2>{{ kpis.tempo_medio }}</h2>
+            </div>
+        </div>
+
+    </div>
+
+    <div class="card p-3 shadow">
+        <h5 class="mb-3">📋 Veículos</h5>
+
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th>Operação</th>
+                    <th>Tipo</th>
+                    <th>Placa</th>
+                    <th>Status</th>
+                    <th>Tempo (h)</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for row in tabela %}
+                <tr>
+                    <td>{{ row.operacao }}</td>
+                    <td>{{ row.tipo }}</td>
+                    <td>{{ row.placa }}</td>
+
+                    <td>
+                        {% if row.status == 'NO PÁTIO' %}
+                            <span class="badge badge-danger">NO PÁTIO</span>
+                        {% else %}
+                            <span class="badge badge-success">FINALIZADO</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ row.tempo }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+
+        </table>
+    </div>
+
+</div>
+
+</body>
+</html>
