@@ -6,11 +6,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
+    <!-- Tom Select -->
+    <link href="https://cdn.jsdelivr.net/npm/tom-select/dist/css/tom-select.css" rel="stylesheet">
+
 </head>
 <body>
 
 <header class="topo">
     <img src="{{ url_for('static', filename='logo.png') }}" class="logo">
+
     <h1>Controle de Portaria</h1>
 
     <nav class="menu">
@@ -33,35 +38,44 @@
     Rodovitor Transportes © 2026
 </footer>
 
-
-<script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-<script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+<!-- Tom Select -->
+<script src="https://cdn.jsdelivr.net/npm/tom-select/dist/js/tom-select.complete.min.js"></script>
 
 <script>
 
-$(document).ready(function () {
+document.addEventListener("DOMContentLoaded", function () {
 
-    $('#cavalo').select2({
-        placeholder: "Selecione a placa...",
-        width: '100%'
-    });
+    const config = {
 
-    $('#placa1').select2({
-        placeholder: "Selecione a placa...",
-        width: '100%'
-    });
+        create: false,
+        maxOptions: 8,
+        searchField: ['text'],
+        placeholder: "Digite pelo menos 2 letras da placa...",
+        closeAfterSelect: true,
+        hideSelected: true,
+        openOnFocus: true,
+        highlight: true,
+        maxItems: 1
 
-    $('#placa2').select2({
-        placeholder: "Selecione a placa...",
-        width: '100%'
-    });
+    };
+
+    if(document.querySelector("#cavalo")){
+        new TomSelect("#cavalo", config);
+    }
+
+    if(document.querySelector("#placa1")){
+        new TomSelect("#placa1", config);
+    }
+
+    if(document.querySelector("#placa2")){
+        new TomSelect("#placa2", config);
+    }
 
 });
 
 </script>
 
-
+</script>
 
 </body>
 </html>

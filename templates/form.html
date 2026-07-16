@@ -54,6 +54,7 @@
     <option value="">Selecione</option>
     <option value="BITREM">BITREM</option>
     <option value="LS">LS</option>
+    <option value="CAMINHAO">CAMINHÃO</option>
 </select>
 
 <div id="campo-placa1">
@@ -155,20 +156,33 @@ function ajustarCampos() {
 
     let tipo = document.getElementById("tipo").value;
 
-    if (tipo === "BITREM") {
+    if (tipo == "BITREM") {
 
+        campo("campo-placa1", true);
         campo("campo-placa2", true);
+        campo("campo-lacre1", true);
         campo("campo-lacre2", true);
-        campo("campo-lacre1", true);
-
-    } else {
-
-        // LS
-        campo("campo-placa2", false);
-        campo("campo-lacre2", false);
-        campo("campo-lacre1", true);
 
     }
+
+    else if (tipo == "LS") {
+
+        campo("campo-placa1", true);
+        campo("campo-placa2", false);
+        campo("campo-lacre1", true);
+        campo("campo-lacre2", false);
+
+    }
+
+    else if (tipo == "CAMINHAO") {
+
+        campo("campo-placa1", false);
+        campo("campo-placa2", false);
+        campo("campo-lacre1", false);
+        campo("campo-lacre2", false);
+
+    }
+
 }
 
 function campo(id, mostrar) {
