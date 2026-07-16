@@ -256,6 +256,47 @@ def editar(id):
         placas=placas
     )
 
+
+@app.route("/cadastrar_placa", methods=["POST"])
+@login_required
+def cadastrar_placa():
+
+    placa = request.form.get("placa", "").upper().strip()
+
+    if placa == "":
+        return {
+            "sucesso": False,
+            "mensagem": "Informe uma placa."
+        }
+
+    con = conectar()
+
+    existe = con.execute(
+        "SELECT id FROM veiculos WHERE placa=?",
+        (placa,)
+    ).fetchone()
+
+    if existe:
+        con.close()
+        return {
+            "sucesso": False,
+            "mensagem": "Placa já cadastrada."
+        }
+
+    con.execute(
+        "INSERT INTO veiculos (placa) VALUES (?)",
+        (placa,)
+    )
+
+    con.commit()
+    con.close()
+
+    return {
+        "sucesso": True,
+        "placa": placa
+    }
+
+
 # ---------- DASHBOARD ----------
 @app.route('/dashboard')
 @login_required

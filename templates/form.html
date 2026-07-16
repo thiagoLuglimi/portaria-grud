@@ -46,6 +46,18 @@
 
 </select>
 
+<div style="margin-top:8px; margin-bottom:15px;">
+    <button
+        type="button"
+        class="btn btn-secundario"
+        onclick="abrirCadastroPlaca()">
+
+        + Nova Placa
+
+    </button>
+</div>
+
+
 <label>KM do Cavalo</label>
 <input type="text" name="km">
 
@@ -151,6 +163,10 @@
 
 </form>
 
+
+
+
+
 <script>
 function ajustarCampos() {
 
@@ -191,5 +207,68 @@ function campo(id, mostrar) {
 
 // Executa quando a página abre
 window.onload = ajustarCampos;
+
+
+
+function abrirCadastroPlaca(){
+
+    let placa = prompt("Digite a nova placa:");
+
+    if(placa == null)
+        return;
+
+    placa = placa.toUpperCase().trim();
+
+    fetch("/cadastrar_placa",{
+
+        method:"POST",
+
+        headers:{
+            "Content-Type":"application/x-www-form-urlencoded"
+        },
+
+        body:"placa="+placa
+
+    })
+
+    .then(r=>r.json())
+
+    .then(function(ret){
+
+        if(ret.sucesso){
+
+            window.cavalo.addOption({
+            value: ret.placa,
+            text: ret.placa
+        });
+
+        window.placa1.addOption({
+            value: ret.placa,
+            text: ret.placa
+        });
+
+        window.placa2.addOption({
+            value: ret.placa,
+            text: ret.placa
+        });
+
+        window.cavalo.refreshOptions(false);
+        window.placa1.refreshOptions(false);
+        window.placa2.refreshOptions(false);
+
+        window.cavalo.setValue(ret.placa);
+
+            alert("Placa cadastrada com sucesso!");
+
+        }
+        else{
+
+            alert(ret.mensagem || "Erro ao cadastrar.");
+
+        }
+
+    });
+
+}
 </script>
 {% endblock %}

@@ -59,16 +59,20 @@ document.addEventListener("DOMContentLoaded", function () {
 
     };
 
+    window.cavalo = null;
+    window.placa1 = null;
+    window.placa2 = null;
+
     if(document.querySelector("#cavalo")){
-        new TomSelect("#cavalo", config);
+        window.cavalo = new TomSelect("#cavalo", config);
     }
 
     if(document.querySelector("#placa1")){
-        new TomSelect("#placa1", config);
+        window.placa1 = new TomSelect("#placa1", config);
     }
 
     if(document.querySelector("#placa2")){
-        new TomSelect("#placa2", config);
+        window.placa2 = new TomSelect("#placa2", config);
     }
 
 });
